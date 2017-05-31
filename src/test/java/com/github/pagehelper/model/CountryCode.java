@@ -22,39 +22,49 @@
  * THE SOFTWARE.
  */
 
-package com.github.pagehelper.test.basic;
+package com.github.pagehelper.model;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.mapper.CountryMapper;
-import com.github.pagehelper.model.Country;
-import com.github.pagehelper.util.MybatisHelper;
-import org.apache.ibatis.session.RowBounds;
-import org.apache.ibatis.session.SqlSession;
-import org.junit.Test;
-
+import java.io.Serializable;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+public class CountryCode implements Serializable {
+    private static final long serialVersionUID = 6569081236403751407L;
 
-public class CollectionMapTest {
+    private int    id;
+    private String countryname;
+    private Code   countrycode;
 
-    @Test
-    public void test() {
-        SqlSession sqlSession = MybatisHelper.getSqlSession();
-        CountryMapper countryMapper = sqlSession.getMapper(CountryMapper.class);
-        try {
-            //获取第1页，10条内容，默认查询总数count
-            PageHelper.startPage(1, 5);
-            List<Country> list1 = countryMapper.selectGreterThanId(1);
+    List<CountryCode> countries;
 
-            //获取第1页，10条内容，默认查询总数count
-            PageHelper.startPage(1, 5);
-            List<Country> list2 = countryMapper.selectCollectionMap();
-            assertEquals(5, list2.size());
-            assertEquals(183, ((Page<?>) list2).getTotal());
-        } finally {
-            sqlSession.close();
-        }
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getCountryname() {
+        return countryname;
+    }
+
+    public void setCountryname(String countryname) {
+        this.countryname = countryname;
+    }
+
+    public Code getCountrycode() {
+        return countrycode;
+    }
+
+    public void setCountrycode(Code countrycode) {
+        this.countrycode = countrycode;
+    }
+
+    public List<CountryCode> getCountries() {
+        return countries;
+    }
+
+    public void setCountries(List<CountryCode> countries) {
+        this.countries = countries;
     }
 }

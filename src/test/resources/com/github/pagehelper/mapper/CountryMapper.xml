@@ -304,10 +304,19 @@
     
     <resultMap id="collectionMap" type="com.github.pagehelper.model.Country">
         <id column="id" property="id"/>
-        <collection property="countries" column="countryname" ofType="com.github.pagehelper.model.Country" select="selectAll"/>
+        <collection property="countries" column="{id=id}" ofType="com.github.pagehelper.model.Country" select="selectGreterThanId"/>
     </resultMap>
     
     <select id="selectCollectionMap" resultMap="collectionMap">
         select * from country
+    </select>
+
+    <resultMap id="codeMap" type="com.github.pagehelper.model.CountryCode">
+        <id column="id" property="id"/>
+        <result column="countrycode" property="countrycode" typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+    </resultMap>
+
+    <select id="selectByCode" resultMap="codeMap">
+        select * from country where countrycode = #{code, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
     </select>
 </mapper>
