@@ -1,5 +1,25 @@
 ## Changelog
 
+### 5.1.2 - 2017-09-18
+
+- Solve the problem  when using the `PageHelper.orderBy` method alone #110;
+
+### 5.1.1 - 2017-08-30
+
+- The update to solve the problem and only SqlServer 2005,2008 related.
+- Resolve `RegexWithNolockReplaceSql` in the Wrong regular `w?`, it should be `w+`.
+- Resolved `SqlServerDialect` did not initialize the default `SimpleWithNolockReplaceSql` error.
+- `SqlServerRowBoundsDialect` support for the replaceSql parameter.
+
+
+### 5.1.0 - 2017-08-28
+
+- Added the sorting functionality included in the previous version of 4.x, and the usage is consistent (PageHelper adds several sort-related methods).
+- Paging SQL is converted to PreparedStatement SQL.
+- Added `ReplaceSql` interface for handling sqlServer with (nolock) problem, add the replaceSql parameters, the optional value is `simple` and `regex`, or to achieve the `ReplaceSql` interface fully qualified class name. The default value is `simple`, still using the original way to deal with, the new regex will be convert `with (nolock)` to `table_PAGEWITHNOLOCK`.
+- `PageRowBounds` add `count` attribute, you can control whether execute the count query.
+
+
 ### 5.0.4 - 2017-08-01
 
 - Add a simple configuration support for the Phoenix database, You can configure `helperDialect=phoenix`. Can also automatically identify the Phoenix database jdbc url.

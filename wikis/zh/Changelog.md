@@ -1,5 +1,24 @@
 ## 更新日志
 
+### 5.1.2 - 2017-09-18
+
+- 解决单独使用 `PageHelper.orderBy` 方法时的问题 #110;
+
+### 5.1.1 - 2017-08-30
+
+- 此次更新解决的问题只和 SqlServer 2005,2008 有关
+- 解决 `RegexWithNolockReplaceSql` 中正则 `w?` 错误的问题，应该是 `w+`。
+- 解决 `SqlServerDialect` 中没有初始化默认 `SimpleWithNolockReplaceSql` 的错误。
+- `SqlServerRowBoundsDialect` 增加对 `replaceSql` 参数的支持。
+
+### 5.1.0 - 2017-08-28
+
+- 增加 4.x 以前版本包含的排序功能，用法一致（PageHelper增加了几个排序相关的方法）。
+- 分页 SQL 转换为预编译 SQL。
+- 增加 `ReplaceSql` 接口用于处理 sqlServer 的 `with(nolock)` 问题，增加了针对性的 `replaceSql` 参数，可选值为 `simple` 和 `regex`，或者是实现了ReplaceSql接口的全限定类名。默认值为
+`simple`，仍然使用原来的方式处理，新的 `regex` 会将如 `table with(nolock)` 处理为 `table_PAGEWITHNOLOCK`。
+- `PageRowBounds` 增加 `count` 属性，可以控制是否进行 `count` 查询。
+
 ### 5.1.0-beta2 - 2017-08-23
 
 - 增加 `ReplaceSql` 接口用于处理 sqlServer 的 `with(nolock)` 问题，增加了针对性的 `replaceSql` 参数，可选值为 `simple` 和 `regex`，或者是实现了ReplaceSql接口的全限定类名。默认值为
