@@ -53,10 +53,10 @@ public class InformixDialect extends AbstractHelperDialect {
         if (boundSql.getParameterMappings() != null) {
             List<ParameterMapping> newParameterMappings = new ArrayList<ParameterMapping>();
             if (page.getStartRow() > 0) {
-                newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_FIRST, Integer.class).build());
+                newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_FIRST, long.class).build());
             }
             if (page.getPageSize() > 0) {
-                newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_SECOND, Integer.class).build());
+                newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_SECOND, int.class).build());
             }
             newParameterMappings.addAll(boundSql.getParameterMappings());
             MetaObject metaObject = MetaObjectUtil.forObject(boundSql);
@@ -75,9 +75,9 @@ public class InformixDialect extends AbstractHelperDialect {
         if (page.getPageSize() > 0) {
             sqlBuilder.append(" FIRST ? ");
         }
-        sqlBuilder.append(" * FROM ( ");
+        sqlBuilder.append(" * FROM ( \n");
         sqlBuilder.append(sql);
-        sqlBuilder.append(" ) TEMP_T ");
+        sqlBuilder.append("\n ) TEMP_T ");
         return sqlBuilder.toString();
     }
 

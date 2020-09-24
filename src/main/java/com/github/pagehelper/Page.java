@@ -33,7 +33,7 @@ import java.util.List;
  *
  * @author liuzh/abel533/isea533
  * @version 3.6.0
- *          项目地址 : http://git.oschina.net/free/Mybatis_PageHelper
+ * 项目地址 : http://git.oschina.net/free/Mybatis_PageHelper
  */
 public class Page<E> extends ArrayList<E> implements Closeable {
     private static final long serialVersionUID = 1L;
@@ -49,11 +49,11 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     /**
      * 起始行
      */
-    private int startRow;
+    private long startRow;
     /**
      * 末行
      */
-    private int endRow;
+    private long endRow;
     /**
      * 总数
      */
@@ -86,6 +86,11 @@ public class Page<E> extends ArrayList<E> implements Closeable {
      * 只增加排序
      */
     private boolean orderByOnly;
+    /**
+     * sql拦截处理
+     */
+    private BoundSqlInterceptor boundSqlInterceptor;
+    private transient BoundSqlInterceptor.Chain chain;
 
     public Page() {
         super();
@@ -144,11 +149,11 @@ public class Page<E> extends ArrayList<E> implements Closeable {
         return this;
     }
 
-    public int getEndRow() {
+    public long getEndRow() {
         return endRow;
     }
 
-    public Page<E> setEndRow(int endRow) {
+    public Page<E> setEndRow(long endRow) {
         this.endRow = endRow;
         return this;
     }
@@ -172,11 +177,11 @@ public class Page<E> extends ArrayList<E> implements Closeable {
         return this;
     }
 
-    public int getStartRow() {
+    public long getStartRow() {
         return startRow;
     }
 
-    public Page<E> setStartRow(int startRow) {
+    public Page<E> setStartRow(long startRow) {
         this.startRow = startRow;
         return this;
     }
@@ -198,7 +203,7 @@ public class Page<E> extends ArrayList<E> implements Closeable {
         }
         //分页合理化，针对不合理的页码自动处理
         if ((reasonable != null && reasonable) && pageNum > pages) {
-            if(pages!=0){
+            if (pages != 0) {
                 pageNum = pages;
             }
             calculateStartAndEndRow();
@@ -227,11 +232,12 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     }
 
     public Page<E> setPageSizeZero(Boolean pageSizeZero) {
-        if (pageSizeZero != null) {
+        if (this.pageSizeZero == null && pageSizeZero != null) {
             this.pageSizeZero = pageSizeZero;
         }
         return this;
     }
+
     public String getOrderBy() {
         return orderBy;
     }
@@ -324,6 +330,17 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     }
 
     /**
+     * 设置 BoundSql 拦截器
+     *
+     * @param boundSqlInterceptor
+     * @return
+     */
+    public Page<E> boundSqlInterceptor(BoundSqlInterceptor boundSqlInterceptor) {
+        setBoundSqlInterceptor(boundSqlInterceptor);
+        return this;
+    }
+
+    /**
      * 指定 count 查询列
      *
      * @param columnName
@@ -335,13 +352,49 @@ public class Page<E> extends ArrayList<E> implements Closeable {
     }
 
     public PageInfo<E> toPageInfo() {
-        PageInfo<E> pageInfo = new PageInfo<E>(this);
+        return new PageInfo<E>(this);
+    }
+
+    public <T> PageInfo<T> toPageInfo(Function<E, T> function) {
+        List<T> list = new ArrayList<T>(this.size());
+        for (E e : this) {
+            list.add(function.apply(e));
+        }
+        PageInfo<T> pageInfo = new PageInfo<T>(list);
+        pageInfo.setPageNum(this.getPageNum());
+        pageInfo.setPageSize(this.getPageSize());
+        pageInfo.setPages(this.getPages());
+        pageInfo.setStartRow(this.getStartRow());
+        pageInfo.setEndRow(this.getEndRow());
+        pageInfo.calcByNavigatePages(PageInfo.DEFAULT_NAVIGATE_PAGES);
         return pageInfo;
     }
 
     public PageSerializable<E> toPageSerializable() {
-        PageSerializable<E> serializable = new PageSerializable<E>(this);
-        return serializable;
+        return new PageSerializable<E>(this);
+    }
+
+    public <T> PageSerializable<T> toPageSerializable(Function<E, T> function) {
+        List<T> list = new ArrayList<T>(this.size());
+        for (E e : this) {
+            list.add(function.apply(e));
+        }
+        return new PageSerializable<T>(list);
+    }
+
+    /**
+     * 兼容低版本 Java 7-
+     */
+    public interface Function<E, T> {
+
+        /**
+         * Applies this function to the given argument.
+         *
+         * @param t the function argument
+         * @return the function result
+         */
+        T apply(E t);
+
     }
 
     public <E> Page<E> doSelectPage(ISelect select) {
@@ -372,6 +425,22 @@ public class Page<E> extends ArrayList<E> implements Closeable {
 
     public void setCountColumn(String countColumn) {
         this.countColumn = countColumn;
+    }
+
+    public BoundSqlInterceptor getBoundSqlInterceptor() {
+        return boundSqlInterceptor;
+    }
+
+    public void setBoundSqlInterceptor(BoundSqlInterceptor boundSqlInterceptor) {
+        this.boundSqlInterceptor = boundSqlInterceptor;
+    }
+
+    BoundSqlInterceptor.Chain getChain() {
+        return chain;
+    }
+
+    void setChain(BoundSqlInterceptor.Chain chain) {
+        this.chain = chain;
     }
 
     @Override

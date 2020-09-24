@@ -41,12 +41,12 @@ public class SqlTest {
     public void testSqlParser() throws JSQLParserException {
         CountSqlParser countSqlParser = new CountSqlParser();
         System.out.println(countSqlParser.getSmartCountSql("with " +
-                "cr as " +
-                "( " +
-                "    select CountryRegionCode from person.CountryRegion where Name like 'C%' order by name" +
-                ") " +
-                " " +
-                "select * from person.StateProvince where CountryRegionCode in (select * from cr)"));
+            "cr as " +
+            "( " +
+            "    select UserRegionCode from person.UserRegion where Name like 'C%' order by name" +
+            ") " +
+            " " +
+            "select * from person.StateProvince where UserRegionCode in (select * from cr)"));
 
         System.out.println(countSqlParser.getSmartCountSql("with cr as " +
                 " (select aaz093 from aa10 where aaa100 like 'AAB05%' order by aaz093 desc) " +
@@ -69,6 +69,8 @@ public class SqlTest {
                 "select * from aa10 where aaa100 = 'AAC031')"));
 
         System.out.println(countSqlParser.getSmartCountSql("select so.id,so.address,so.area_code,so.area_id,so.del_flag,so.email,so.fax,so.grade,so.icon,so.master, so.name,so.parent_id,so.parent_ids,so.phone,so.remarks,so.type,so.zip_code from sys_organization so LEFT JOIN sys_user_organization suo ON (suo.org_id = so.id or FIND_IN_SET(suo.org_id,so.parent_ids)) where suo.user_id = ? group by so.id LIMIT ? "));
+
+        System.out.println(countSqlParser.getSmartCountSql("select xx,xx,xx from xx1 left join xx2 on xx1.id=xx2.user_id where 1=1 and xx1.`name` like \"%ll%\" and  xx1.status = 1 and (xx2.`type` = 1) order by xx1.number asc"));
     }
 
 
@@ -95,7 +97,7 @@ public class SqlTest {
     @Test
     public void testSqlParser2() throws JSQLParserException {
         CountSqlParser countSqlParser = new CountSqlParser();
-        System.out.println(countSqlParser.getSmartCountSql("select countryname,count(id) from country group by countryname"));
+        System.out.println(countSqlParser.getSmartCountSql("select name,count(id) from user group by name"));
     }
     @Test
     public void testSqlParser3() throws JSQLParserException {

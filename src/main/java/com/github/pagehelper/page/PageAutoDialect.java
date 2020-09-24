@@ -67,6 +67,7 @@ public class PageAutoDialect {
         registerDialectAlias("herddb", HerdDBDialect.class);
 
         registerDialectAlias("oracle", OracleDialect.class);
+        registerDialectAlias("oracle9i", Oracle9iDialect.class);
         registerDialectAlias("db2", Db2Dialect.class);
         registerDialectAlias("informix", InformixDialect.class);
         //解决 informix-sqli #129，仍然保留上面的
@@ -82,6 +83,7 @@ public class PageAutoDialect {
         registerDialectAlias("edb", OracleDialect.class);
         //神通数据库
         registerDialectAlias("oscar", MySqlDialect.class);
+        registerDialectAlias("clickhouse", MySqlDialect.class);
     }
 
     //自动获取dialect,如果没有setProperties或setSqlUtilConfig，也可以正常进行
@@ -121,8 +123,9 @@ public class PageAutoDialect {
     }
 
     private String fromJdbcUrl(String jdbcUrl) {
+        final String url = jdbcUrl.toLowerCase();
         for (String dialect : dialectAliasMap.keySet()) {
-            if (jdbcUrl.indexOf(":" + dialect + ":") != -1) {
+            if (url.contains(":" + dialect.toLowerCase() + ":")) {
                 return dialect;
             }
         }

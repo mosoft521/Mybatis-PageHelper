@@ -44,7 +44,7 @@ public class SqlServer2012Dialect extends SqlServerDialect {
         pageKey.update(page.getStartRow());
         pageKey.update(page.getPageSize());
         //处理参数配置
-        handleParameter(boundSql, ms);
+        handleParameter(boundSql, ms, long.class, int.class);
         return paramMap;
     }
 
@@ -52,7 +52,7 @@ public class SqlServer2012Dialect extends SqlServerDialect {
     public String getPageSql(String sql, Page page, CacheKey pageKey) {
         StringBuilder sqlBuilder = new StringBuilder(sql.length() + 64);
         sqlBuilder.append(sql);
-        sqlBuilder.append(" OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
+        sqlBuilder.append("\n OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ");
         pageKey.update(page.getPageSize());
         return sqlBuilder.toString();
     }

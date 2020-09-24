@@ -24,8 +24,10 @@
 
 package com.github.pagehelper.util;
 
+import com.github.pagehelper.BoundSqlInterceptor;
 import com.github.pagehelper.Dialect;
 import com.github.pagehelper.PageException;
+import org.apache.ibatis.builder.annotation.ProviderSqlSource;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -46,12 +48,20 @@ public abstract class ExecutorUtil {
 
     private static Field additionalParametersField;
 
+    private static Field providerMethodArgumentNamesField;
+
     static {
         try {
             additionalParametersField = BoundSql.class.getDeclaredField("additionalParameters");
             additionalParametersField.setAccessible(true);
         } catch (NoSuchFieldException e) {
             throw new PageException("获取 BoundSql 属性 additionalParameters 失败: " + e, e);
+        }
+        try {
+            //兼容低版本
+            providerMethodArgumentNamesField = ProviderSqlSource.class.getDeclaredField("providerMethodArgumentNames");
+            providerMethodArgumentNamesField.setAccessible(true);
+        } catch (NoSuchFieldException ignore) {
         }
     }
 
@@ -66,6 +76,20 @@ public abstract class ExecutorUtil {
             return (Map<String, Object>) additionalParametersField.get(boundSql);
         } catch (IllegalAccessException e) {
             throw new PageException("获取 BoundSql 属性值 additionalParameters 失败: " + e, e);
+        }
+    }
+
+    /**
+     * 获取 ProviderSqlSource 属性值 providerMethodArgumentNames
+     *
+     * @param providerSqlSource
+     * @return
+     */
+    public static String[] getProviderMethodArgumentNames(ProviderSqlSource providerSqlSource) {
+        try {
+            return providerMethodArgumentNamesField != null ? (String[]) providerMethodArgumentNamesField.get(providerSqlSource) : null;
+        } catch (IllegalAccessException e) {
+            throw new PageException("获取 ProviderSqlSource 属性值 providerMethodArgumentNames: " + e, e);
         }
     }
 
@@ -134,6 +158,10 @@ public abstract class ExecutorUtil {
         for (String key : additionalParameters.keySet()) {
             countBoundSql.setAdditionalParameter(key, additionalParameters.get(key));
         }
+        //对 boundSql 的拦截处理
+        if (dialect instanceof BoundSqlInterceptor.Chain) {
+            countBoundSql = ((BoundSqlInterceptor.Chain) dialect).doBoundSql(BoundSqlInterceptor.Type.COUNT_SQL, countBoundSql, countKey);
+        }
         //执行 count 查询
         Object countResultList = executor.query(countMs, parameter, RowBounds.DEFAULT, resultHandler, countKey, countBoundSql);
         Long count = (Long) ((List) countResultList).get(0);
@@ -155,9 +183,9 @@ public abstract class ExecutorUtil {
      * @return
      * @throws SQLException
      */
-    public static  <E> List<E> pageQuery(Dialect dialect, Executor executor, MappedStatement ms, Object parameter,
-                                 RowBounds rowBounds, ResultHandler resultHandler,
-                                 BoundSql boundSql, CacheKey cacheKey) throws SQLException {
+    public static <E> List<E> pageQuery(Dialect dialect, Executor executor, MappedStatement ms, Object parameter,
+                                        RowBounds rowBounds, ResultHandler resultHandler,
+                                        BoundSql boundSql, CacheKey cacheKey) throws SQLException {
         //判断是否需要进行分页查询
         if (dialect.beforePage(ms, parameter, rowBounds)) {
             //生成分页的缓存 key
@@ -172,6 +200,10 @@ public abstract class ExecutorUtil {
             //设置动态参数
             for (String key : additionalParameters.keySet()) {
                 pageBoundSql.setAdditionalParameter(key, additionalParameters.get(key));
+            }
+            //对 boundSql 的拦截处理
+            if (dialect instanceof BoundSqlInterceptor.Chain) {
+                pageBoundSql = ((BoundSqlInterceptor.Chain) dialect).doBoundSql(BoundSqlInterceptor.Type.PAGE_SQL, pageBoundSql, pageKey);
             }
             //执行分页查询
             return executor.query(ms, parameter, RowBounds.DEFAULT, resultHandler, pageKey, pageBoundSql);

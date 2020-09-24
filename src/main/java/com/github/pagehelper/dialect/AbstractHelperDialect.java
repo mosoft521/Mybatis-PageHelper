@@ -29,8 +29,10 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageRowBounds;
 import com.github.pagehelper.parser.OrderByParser;
+import com.github.pagehelper.util.ExecutorUtil;
 import com.github.pagehelper.util.MetaObjectUtil;
 import com.github.pagehelper.util.StringUtil;
+import org.apache.ibatis.builder.annotation.ProviderSqlSource;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -89,10 +91,18 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
         }
         //pageSize < 0 的时候，不执行分页查询
         //pageSize = 0 的时候，还需要执行后续查询，但是不会分页
-        if (page.getPageSize() < 0) {
-            return false;
+        if (page.getPageSizeZero() != null) {
+            //PageSizeZero=false&&pageSize<=0
+            if (!page.getPageSizeZero() && page.getPageSize() <= 0) {
+                return false;
+            }
+            //PageSizeZero=true&&pageSize<0 返回 false，只有>=0才需要执行后续的
+            else if (page.getPageSizeZero() && page.getPageSize() < 0) {
+                return false;
+            }
         }
-        return count > ((page.getPageNum() - 1) * page.getPageSize());
+        //页码>0 && 开始行数<总行数即可，不需要考虑 pageSize（上面的 if 已经处理不符合要求的值了）
+        return page.getPageNum() > 0 && count > page.getStartRow();
     }
 
     @Override
@@ -112,6 +122,14 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
             paramMap.putAll((Map) parameterObject);
         } else {
             paramMap = new HashMap<String, Object>();
+            // sqlSource为ProviderSqlSource时，处理只有1个参数的情况
+            if (ms.getSqlSource() instanceof ProviderSqlSource) {
+                String[] providerMethodArgumentNames = ExecutorUtil.getProviderMethodArgumentNames((ProviderSqlSource) ms.getSqlSource());
+                if (providerMethodArgumentNames != null && providerMethodArgumentNames.length == 1) {
+                    paramMap.put(providerMethodArgumentNames[0], parameterObject);
+                    paramMap.put("param1", parameterObject);
+                }
+            }
             //动态sql时的判断条件不会出现在ParameterMapping中，但是必须有，所以这里需要收集所有的getter属性
             //TypeHandlerRegistry可以直接处理的会作为一个直接使用的对象进行处理
             boolean hasTypeHandler = ms.getConfiguration().getTypeHandlerRegistry().hasTypeHandler(parameterObject.getClass());
@@ -199,7 +217,7 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
             page.setTotal(-1);
         } else if ((page.getPageSizeZero() != null && page.getPageSizeZero()) && page.getPageSize() == 0) {
             page.setTotal(pageList.size());
-        } else if(page.isOrderByOnly()){
+        } else if (page.isOrderByOnly()) {
             page.setTotal(pageList.size());
         }
         return page;
@@ -215,11 +233,23 @@ public abstract class AbstractHelperDialect extends AbstractDialect implements C
 
     }
 
-    protected void handleParameter(BoundSql boundSql, MappedStatement ms){
+    /**
+     * @param boundSql
+     * @param ms
+     * @deprecated use {@code handleParameter(BoundSql boundSql, MappedStatement ms, Class<?> firstClass, Class<?> secondClass)}
+     */
+    @Deprecated
+    protected void handleParameter(BoundSql boundSql, MappedStatement ms) {
+        if (boundSql.getParameterMappings() != null) {
+            handleParameter(boundSql, ms, long.class, long.class);
+        }
+    }
+
+    protected void handleParameter(BoundSql boundSql, MappedStatement ms, Class<?> firstClass, Class<?> secondClass) {
         if (boundSql.getParameterMappings() != null) {
             List<ParameterMapping> newParameterMappings = new ArrayList<ParameterMapping>(boundSql.getParameterMappings());
-            newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_FIRST, Integer.class).build());
-            newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_SECOND, Integer.class).build());
+            newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_FIRST, firstClass).build());
+            newParameterMappings.add(new ParameterMapping.Builder(ms.getConfiguration(), PAGEPARAMETER_SECOND, secondClass).build());
             MetaObject metaObject = MetaObjectUtil.forObject(boundSql);
             metaObject.setValue("parameterMappings", newParameterMappings);
         }

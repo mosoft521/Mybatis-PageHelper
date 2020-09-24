@@ -24,17 +24,13 @@
 
 package com.github.pagehelper.dialect.helper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
+import com.github.pagehelper.Page;
+import com.github.pagehelper.dialect.AbstractHelperDialect;
 import org.apache.ibatis.cache.CacheKey;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.dialect.AbstractHelperDialect;
-import com.github.pagehelper.util.MetaObjectUtil;
+import java.util.Map;
 
 /**
  * @author liuzh
@@ -49,7 +45,7 @@ public class OracleDialect extends AbstractHelperDialect {
         pageKey.update(page.getEndRow());
         pageKey.update(page.getStartRow());
         //处理参数配置
-        handleParameter(boundSql, ms);
+        handleParameter(boundSql, ms, long.class, long.class);
         return paramMap;
     }
 
@@ -57,10 +53,10 @@ public class OracleDialect extends AbstractHelperDialect {
     public String getPageSql(String sql, Page page, CacheKey pageKey) {
         StringBuilder sqlBuilder = new StringBuilder(sql.length() + 120);
         sqlBuilder.append("SELECT * FROM ( ");
-        sqlBuilder.append(" SELECT TMP_PAGE.*, ROWNUM ROW_ID FROM ( ");
+        sqlBuilder.append(" SELECT TMP_PAGE.*, ROWNUM PAGEHELPER_ROW_ID FROM ( \n");
         sqlBuilder.append(sql);
-        sqlBuilder.append(" ) TMP_PAGE)");
-        sqlBuilder.append(" WHERE ROW_ID <= ? AND ROW_ID > ?");
+        sqlBuilder.append("\n ) TMP_PAGE)");
+        sqlBuilder.append(" WHERE PAGEHELPER_ROW_ID <= ? AND PAGEHELPER_ROW_ID > ?");
         return sqlBuilder.toString();
     }
 

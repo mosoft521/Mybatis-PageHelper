@@ -87,14 +87,17 @@ public class PageInterceptor implements Interceptor {
                 boundSql = (BoundSql) args[5];
             }
             checkDialectExists();
-
+            //对 boundSql 的拦截处理
+            if (dialect instanceof BoundSqlInterceptor.Chain) {
+                boundSql = ((BoundSqlInterceptor.Chain) dialect).doBoundSql(BoundSqlInterceptor.Type.ORIGINAL, boundSql, cacheKey);
+            }
             List resultList;
             //调用方法判断是否需要进行分页，如果不需要，直接返回结果
             if (!dialect.skip(ms, parameter, rowBounds)) {
                 //判断是否需要进行 count 查询
                 if (dialect.beforeCount(ms, parameter, rowBounds)) {
                     //查询总数
-                    Long count = count(executor, ms, parameter, rowBounds, resultHandler, boundSql);
+                    Long count = count(executor, ms, parameter, rowBounds, null, boundSql);
                     //处理查询总数，返回 true 时继续分页查询，false 时直接返回
                     if (!dialect.afterCount(count, parameter, rowBounds)) {
                         //当查询总数为 0 时，直接返回空的结果
@@ -140,14 +143,18 @@ public class PageInterceptor implements Interceptor {
         if (countMs != null) {
             count = ExecutorUtil.executeManualCount(executor, countMs, parameter, boundSql, resultHandler);
         } else {
-            countMs = msCountMap.get(countMsId);
+            if (msCountMap != null) {
+                countMs = msCountMap.get(countMsId);
+            }
             //自动创建
             if (countMs == null) {
                 //根据当前的 ms 创建一个返回值为 Long 类型的 ms
                 countMs = MSUtils.newCountMappedStatement(ms, countMsId);
-                msCountMap.put(countMsId, countMs);
+                if (msCountMap != null) {
+                    msCountMap.put(countMsId, countMs);
+                }
             }
-            count = ExecutorUtil.executeAutoCount(dialect, executor, countMs, parameter, boundSql, rowBounds, resultHandler);
+            count = ExecutorUtil.executeAutoCount(this.dialect, executor, countMs, parameter, boundSql, rowBounds, resultHandler);
         }
         return count;
     }
